@@ -22,6 +22,7 @@ Resources:
       CodeUri: lambda-stats/
       Handler: lambda-stats
       Runtime: go1.x
+      FunctionName: !Sub '${Environment}-lambda-stats-function'
       Architectures:
         - x86_64
       Events:
