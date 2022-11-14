@@ -20,3 +20,8 @@ jobs:
 
       # sam deploy
       - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --stack-name lambda-stats --s3-bucket ${{ secrets.AWS_SAM_BUCKET }} --capabilities CAPABILITY_IAM --region ${{ secrets.AWS_REGION }}
+
+      # verify deploy
+      - run: |
+         export API_ID=$(aws apigateway get-rest-apis --region eu-west-3 --query "items[?name == 'lambda-stats']" | jq '.[].id' | tr -d "\"")
+         curl --silent --fail --show-error  -o /dev/null "https://$API_ID.execute-api.${{ secrets.AWS_REGION }}.amazonaws.com/dev/lambdas" 
