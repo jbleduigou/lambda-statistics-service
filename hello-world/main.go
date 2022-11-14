@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 
@@ -50,7 +50,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		InitialFields: map[string]interface{}{"request-id": requestID},
 	}
 	logger, _ := cfg.Build()
-	defer logger.Sync()
 	logger.Debug("Received request")
 	resp, err := http.Get(DefaultHTTPGetAddress)
 	if err != nil {
@@ -63,7 +62,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return events.APIGatewayProxyResponse{}, ErrNon200Response
 	}
 
-	ip, err := ioutil.ReadAll(resp.Body)
+	ip, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error("Error while reading response", zap.Error(err))
 		return events.APIGatewayProxyResponse{}, err
