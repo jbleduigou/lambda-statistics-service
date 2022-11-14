@@ -24,4 +24,5 @@ jobs:
       # verify deploy
       - run: |
          export API_ID=$(aws apigateway get-rest-apis --region ${{ secrets.AWS_REGION }} --query "items[?name == 'dev-lambda-stats-api']" | jq '.[].id' | tr -d "\"")
-         curl --silent --fail --show-error  -o /dev/null "https://$API_ID.execute-api.${{ secrets.AWS_REGION }}.amazonaws.com/dev/lambdas" 
+         export API_KEY=$( aws apigateway get-api-keys --region ${{ secrets.AWS_REGION }} --query "items[?stageKeys && contains(stageKeys, '$API_ID/dev')]" --include-value | jq '.[].value' | tr -d "\"")
+         curl --silent --fail --show-error -H "x-api-key: $API_KEY" -o /dev/null "https://$API_ID.execute-api.${{ secrets.AWS_REGION }}.amazonaws.com/dev/lambdas" 
