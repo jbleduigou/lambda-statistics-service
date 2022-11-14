@@ -8,6 +8,9 @@ Description: >
 Globals:
   Function:
     Timeout: 5
+    Tags:
+      Environment: !Ref Environment
+      Service: 'lambda-stats'
 
 Parameters:
   Environment:
@@ -38,26 +41,40 @@ Resources:
           ENVIRONMENT: !Ref Environment
 
   LambdaLogGroup:
-        Type: AWS::Logs::LogGroup
-        DependsOn: [ LambdaStatsFunction ]
-        Properties:
-              RetentionInDays: 3
-              LogGroupName: !Join ['', ['/aws/lambda/', !Ref LambdaStatsFunction]]
+    Type: AWS::Logs::LogGroup
+    DependsOn: [ LambdaStatsFunction ]
+    Properties:
+      RetentionInDays: 3
+      LogGroupName: !Join ['', ['/aws/lambda/', !Ref LambdaStatsFunction]]
+      Tags:
+        - Key: 'Environment'
+          Value: !Ref Environment
+        - Key: 'Service'
+          Value: 'lambda-stats'
 
   AccessLoggedApi:
     Type: AWS::Serverless::Api
     Properties:
       StageName: !Ref Environment
       OpenApiVersion: "3.0.3"
+      Name: !Sub '${Environment}-lambda-stats-api'
       AccessLogSetting:
         DestinationArn: !GetAtt AccessLogGroup.Arn
         Format: '{"requestTime":"$context.requestTime","requestId":"$context.requestId","httpMethod":"$context.httpMethod","path":"$context.path","resourcePath":"$context.resourcePath","status":$context.status,"responseLatency":$context.responseLatency,"xrayTraceId":"$context.xrayTraceId","integrationRequestId":"$context.integration.requestId","functionResponseStatus":"$context.integration.status","integrationLatency":"$context.integration.latency","integrationServiceStatus":"$context.integration.integrationStatus","ip":"$context.identity.sourceIp","userAgent":"$context.identity.userAgent"}'
+      Tags:
+        Environment: !Ref Environment
+        Service: 'lambda-stats'
 
   AccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-          RetentionInDays: 3
-          LogGroupName: !Join ['', ['/aws/apigateway/', !Ref AWS::StackName]]
+      RetentionInDays: 3
+      LogGroupName: !Sub '/aws/apigateway/${Environment}-lambda-stats-api'
+      Tags:
+        - Key: 'Environment'
+          Value: !Ref Environment
+        - Key: 'Service'
+          Value: 'lambda-stats'
 
 Outputs:
   LambdaStatsFunction:

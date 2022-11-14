@@ -23,5 +23,5 @@ jobs:
 
       # verify deploy
       - run: |
-         export API_ID=$(aws apigateway get-rest-apis --region eu-west-3 --query "items[?name == 'lambda-stats']" | jq '.[].id' | tr -d "\"")
+         export API_ID=$(aws apigateway get-rest-apis --region ${{ secrets.AWS_REGION }} --query "items[?name == 'dev-lambda-stats-api']" | jq '.[].id' | tr -d "\"")
          curl --silent --fail --show-error  -o /dev/null "https://$API_ID.execute-api.${{ secrets.AWS_REGION }}.amazonaws.com/dev/lambdas" 
