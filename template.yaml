@@ -17,11 +17,11 @@ Parameters:
     Default: dev
 
 Resources:
-  HelloWorldFunction:
+  LambdaStatsFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: hello-world/
-      Handler: hello-world
+      CodeUri: lambda-stats/
+      Handler: lambda-stats
       Runtime: go1.x
       Architectures:
         - x86_64
@@ -39,10 +39,10 @@ Resources:
 
   LambdaLogGroup:
         Type: AWS::Logs::LogGroup
-        DependsOn: [ HelloWorldFunction ]
+        DependsOn: [ LambdaStatsFunction ]
         Properties:
               RetentionInDays: 3
-              LogGroupName: !Join ['', ['/aws/lambda/', !Ref HelloWorldFunction]]
+              LogGroupName: !Join ['', ['/aws/lambda/', !Ref LambdaStatsFunction]]
 
   AccessLoggedApi:
     Type: AWS::Serverless::Api
@@ -62,12 +62,12 @@ Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldAPI:
+  LambdaStatsAPI:
     Description: "API Gateway endpoint URL for Prod environment for First Function"
     Value: !Sub "https://${AccessLoggedApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
+  LambdaStatsFunction:
     Description: "First Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
+    Value: !GetAtt LambdaStatsFunction.Arn
+  LambdaStatsFunctionIamRole:
     Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+    Value: !GetAtt LambdaStatsFunctionRole.Arn

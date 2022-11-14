@@ -21,4 +21,4 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          working-directory: hello-world
+          working-directory: lambda-stats
