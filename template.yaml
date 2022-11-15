@@ -36,6 +36,9 @@ Resources:
               Ref: AccessLoggedApi
             Path: /lambdas
             Method: GET
+            RequestParameters:
+              - method.request.querystring.region:
+                  Required: false
       Policies:
         - Statement:
           - Sid: ListLambdaFunctions

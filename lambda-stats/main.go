@@ -16,7 +16,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	initLogger(ctx)
 	zap.S().Debug("Received request")
 
-	s, err := NewLambdaService("us-east-1")
+	s, err := NewLambdaService(getRequestedRegion(request))
 
 	if err != nil {
 		zap.S().Error("Error creating lambda service", zap.Error(err))
@@ -90,4 +90,12 @@ func getLogLevel() zapcore.Level {
 		return zap.InfoLevel
 	}
 	return zap.WarnLevel
+}
+
+func getRequestedRegion(request events.APIGatewayProxyRequest) string {
+	region, found := request.QueryStringParameters["region"]
+	if !found {
+		return "us-east-1"
+	}
+	return region
 }
