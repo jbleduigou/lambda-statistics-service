@@ -12,17 +12,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// var (
-// 	// DefaultHTTPGetAddress Default Address
-// 	DefaultHTTPGetAddress = "https://checkip.amazonaws.com"
-
-// 	// ErrNoIP No IP found in response
-// 	ErrNoIP = errors.New("No IP in HTTP response")
-
-// 	// ErrNon200Response non 200 status code in response
-// 	ErrNon200Response = errors.New("Non 200 Response found")
-// )
-
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	initLogger(ctx)
 	zap.S().Debug("Received request")

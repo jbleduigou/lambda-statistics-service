@@ -36,6 +36,13 @@ Resources:
               Ref: AccessLoggedApi
             Path: /lambdas
             Method: GET
+      Policies:
+        - Statement:
+          - Sid: ListLambdaFunctions
+            Effect: Allow
+            Action:
+            - lambda:List*
+            Resource: '*'
       Environment: 
         Variables:
           ENVIRONMENT: !Ref Environment
