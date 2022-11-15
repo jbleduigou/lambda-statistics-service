@@ -25,3 +25,8 @@ jobs:
       run: |
         cd lambda-stats
         go build
+
+    - name: Run unit tests
+      run: |
+        cd lambda-stats
+        go test ./... -race 
