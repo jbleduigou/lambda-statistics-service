@@ -3,10 +3,10 @@ package services
 import (
 	"context"
 	"fmt"
-	"testing"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/stretchr/testify/mock"
+	"lambda-stats/api"
+	"testing"
 
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +26,7 @@ func TestGetLambdaFunctions(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
 		setupMock     func(m *mockedLambda)
-		wantFunctions []string
+		wantFunctions []api.LambdaFunction
 		wantErr       string
 	}{
 		{
@@ -34,7 +34,7 @@ func TestGetLambdaFunctions(t *testing.T) {
 			setupMock: func(m *mockedLambda) {
 				m.On("ListFunctionsWithContext", ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("fake error"))
 			},
-			wantFunctions: []string{},
+			wantFunctions: []api.LambdaFunction{},
 			wantErr:       "fake error",
 		},
 		{
@@ -47,7 +47,7 @@ func TestGetLambdaFunctions(t *testing.T) {
 					}},
 						nil)
 			},
-			wantFunctions: []string{"arn:aws:lambda:us-east-1:123456789012:function:sam-app-HelloWorldFunction", "arn:aws:lambda:us-east-1:123456789012:function:sam-app-AlexaFunction"},
+			wantFunctions: []api.LambdaFunction{{FunctionName: "", FunctionArn: "arn:aws:lambda:us-east-1:123456789012:function:sam-app-HelloWorldFunction", Description: "", Runtime: "", Tags: map[string]*string(nil)}, {FunctionName: "", FunctionArn: "arn:aws:lambda:us-east-1:123456789012:function:sam-app-AlexaFunction", Description: "", Runtime: "", Tags: map[string]*string(nil)}},
 		},
 	} {
 		m := &mockedLambda{}
