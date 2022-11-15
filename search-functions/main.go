@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"go.uber.org/zap"
+	"lambda-stats/api"
 	"lambda-stats/config"
 	"lambda-stats/errors"
 	"lambda-stats/log"
@@ -25,15 +26,30 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		}, nil
 	}
 
+	runtime, err := getRequestedRuntime(request)
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusUnprocessableEntity,
+			Body:       err.Error(),
+		}, nil
+	}
+
 	s, err := services.NewLambdaService(region)
 	if err != nil {
 		zap.S().Error("Error while creating service", zap.Error(err))
 		return events.APIGatewayProxyResponse{}, err
 	}
-	stats, err := s.GetLambdaFunctions(ctx)
+	lf, err := s.GetLambdaFunctions(ctx)
 	if err != nil {
 		zap.S().Error("Error while retrieving list of lambda functions", zap.Error(err))
 		return events.APIGatewayProxyResponse{}, err
+	}
+
+	stats := []api.LambdaFunction{}
+	for _, v := range lf {
+		if v.Runtime == runtime {
+			stats = append(stats, v)
+		}
 	}
 	payload, err := json.Marshal(stats)
 
@@ -63,4 +79,17 @@ func getRequestedRegion(request events.APIGatewayProxyRequest) (string, error) {
 		}
 	}
 	return region, errors.ErrInvalidRegion
+}
+
+func getRequestedRuntime(request events.APIGatewayProxyRequest) (string, error) {
+	runtime, found := request.QueryStringParameters["runtime"]
+	if !found {
+		return runtime, errors.ErrNoRuntime
+	}
+	for _, v := range config.SupportedRuntimes {
+		if runtime == v {
+			return runtime, nil
+		}
+	}
+	return runtime, errors.ErrInvalidRuntime
 }
