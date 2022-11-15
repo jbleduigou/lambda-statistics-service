@@ -5,5 +5,5 @@ type LambdaFunction struct {
 	FunctionArn  string             `json:"function-arn"`
 	Description  string             `json:"description"`
 	Runtime      string             `json:"runtime"`
-	Tags         map[string]*string `json:"tags"`
+	Tags         map[string]*string `json:"tags,omitempty"`
 }

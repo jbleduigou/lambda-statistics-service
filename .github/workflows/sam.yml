@@ -26,4 +26,4 @@ jobs:
          export API_ID=$(aws apigateway get-rest-apis --region ${{ secrets.AWS_REGION }} --query "items[?name == 'dev-lambda-stats-api']" | jq '.[].id' | tr -d "\"")
          export API_KEY=$( aws apigateway get-api-keys --region ${{ secrets.AWS_REGION }} --query "items[?stageKeys && contains(stageKeys, '$API_ID/dev')]" --include-value | jq '.[].value' | tr -d "\"")
          curl --silent --fail --show-error -H "x-api-key: $API_KEY" -o /dev/null "https://$API_ID.execute-api.${{ secrets.AWS_REGION }}.amazonaws.com/dev/list"
-         curl --silent --fail --show-error -H "x-api-key: $API_KEY" -o /dev/null "https://$API_ID.execute-api.${{ secrets.AWS_REGION }}.amazonaws.com/dev/search?region=${{ secrets.AWS_REGION }}&runtime=go1.x"
+         curl --silent --fail --show-error -H "x-api-key: $API_KEY" -o /dev/null "https://$API_ID.execute-api.${{ secrets.AWS_REGION }}.amazonaws.com/dev/search?region=${{ secrets.AWS_REGION }}&runtime=go1.x&tags=dev"

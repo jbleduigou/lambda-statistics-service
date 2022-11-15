@@ -13,6 +13,7 @@ import (
 	"lambda-stats/log"
 	"lambda-stats/services"
 	"net/http"
+	"strings"
 )
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -35,6 +36,14 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		}, nil
 	}
 
+	tags, err := getRequestedTags(request)
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusUnprocessableEntity,
+			Body:       err.Error(),
+		}, nil
+	}
+
 	s, err := services.NewLambdaService(region)
 	if err != nil {
 		zap.S().Error("Error while creating service", zap.Error(err))
@@ -47,7 +56,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	stats := filterFunctionsByRuntime(lf, runtime)
-	statsWithTags, err := filterFunctionsByTags(ctx, stats, s)
+	statsWithTags, err := filterFunctionsByTags(ctx, stats, tags, s)
 	if err != nil {
 		zap.S().Error("Error while retrieving tags of lambda functions", zap.Error(err))
 		return events.APIGatewayProxyResponse{}, err
@@ -75,7 +84,7 @@ func filterFunctionsByRuntime(lf []api.LambdaFunction, runtime string) []api.Lam
 	return stats
 }
 
-func filterFunctionsByTags(ctx aws.Context, lambdas []api.LambdaFunction, s services.LambdaService) ([]api.LambdaFunction, error) {
+func filterFunctionsByTags(ctx aws.Context, lambdas []api.LambdaFunction, tags string, s services.LambdaService) ([]api.LambdaFunction, error) {
 	errChan := make(chan error)
 	defer close(errChan)
 
@@ -106,7 +115,12 @@ func filterFunctionsByTags(ctx aws.Context, lambdas []api.LambdaFunction, s serv
 	}
 	for range lambdas {
 		lf := <-statChan
-		stats = append(stats, lf)
+		for k, v := range lf.Tags {
+			if strings.Contains(k, tags) || strings.Contains(*v, tags) {
+				stats = append(stats, lf)
+				break
+			}
+		}
 	}
 	return stats, errOut
 }
@@ -139,4 +153,12 @@ func getRequestedRuntime(request events.APIGatewayProxyRequest) (string, error) 
 		}
 	}
 	return runtime, errors.ErrInvalidRuntime
+}
+
+func getRequestedTags(request events.APIGatewayProxyRequest) (string, error) {
+	tags, found := request.QueryStringParameters["tags"]
+	if !found {
+		return tags, errors.ErrNoTags
+	}
+	return tags, nil
 }

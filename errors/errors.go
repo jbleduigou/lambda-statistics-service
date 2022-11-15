@@ -14,4 +14,7 @@ var (
 
 	// ErrInvalidRuntime The requested runtime is not a valid AWS runtime
 	ErrInvalidRuntime = errors.New("invalid runtime requested")
+
+	// ErrNoTags No tags specified
+	ErrNoTags = errors.New("tags parameter is mandatory")
 )
