@@ -5,10 +5,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/lambda/lambdaiface"
+	"lambda-stats/api"
 )
 
 type LambdaService interface {
-	GetLambdaFunctions(ctx aws.Context) ([]string, error)
+	GetLambdaFunctions(ctx aws.Context) ([]api.LambdaFunction, error)
 }
 
 func NewLambdaService(region string) (LambdaService, error) {
@@ -22,15 +23,21 @@ type lambdaServiceImpl struct {
 	l lambdaiface.LambdaAPI
 }
 
-func (s *lambdaServiceImpl) GetLambdaFunctions(ctx aws.Context) ([]string, error) {
-	lambdas := []string{}
+func (s *lambdaServiceImpl) GetLambdaFunctions(ctx aws.Context) ([]api.LambdaFunction, error) {
+	lambdas := []api.LambdaFunction{}
 	input := &lambda.ListFunctionsInput{}
 	output, err := s.l.ListFunctionsWithContext(ctx, input)
 	if err != nil {
 		return lambdas, err
 	}
-	for _, f := range output.Functions {
-		lambdas = append(lambdas, *f.FunctionArn)
+	for _, fc := range output.Functions {
+		f := api.LambdaFunction{
+			FunctionName: aws.StringValue(fc.FunctionName),
+			FunctionArn:  aws.StringValue(fc.FunctionArn),
+			Description:  aws.StringValue(fc.Description),
+			Runtime:      aws.StringValue(fc.Runtime),
+		}
+		lambdas = append(lambdas, f)
 	}
 	return lambdas, nil
 }

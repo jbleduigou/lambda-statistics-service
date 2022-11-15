@@ -132,6 +132,6 @@ Resources:
               LogGroupName: !Join ['', ['/aws/lambda/', !Ref ListFunctionsFunction]]
 
 Outputs:
-  LambdaStatsFunction:
+  SearchFunctionsFunction:
     Description: "Lambda Function ARN"
-    Value: !GetAtt LambdaStatsFunction.Arn
+    Value: !GetAtt SearchFunctionsFunction.Arn

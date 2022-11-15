@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"lambda-stats/api"
 	"lambda-stats/config"
 	"lambda-stats/log"
 	"lambda-stats/services"
@@ -40,14 +41,14 @@ func main() {
 	lambda.Start(handler)
 }
 
-func retrieveStatistics(ctx context.Context, regions []string) ([]string, error) {
+func retrieveStatistics(ctx context.Context, regions []string) ([]api.LambdaFunction, error) {
 	errChan := make(chan error)
 	defer close(errChan)
 
-	statChan := make(chan []string)
+	statChan := make(chan []api.LambdaFunction)
 	defer close(statChan)
 
-	stats := []string{}
+	stats := []api.LambdaFunction{}
 	var errOut error
 
 	for _, region := range regions {
@@ -57,7 +58,7 @@ func retrieveStatistics(ctx context.Context, regions []string) ([]string, error)
 
 			if err != nil {
 				errChan <- err
-				statChan <- []string{}
+				statChan <- []api.LambdaFunction{}
 				return
 			}
 
