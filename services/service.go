@@ -10,6 +10,7 @@ import (
 
 type LambdaService interface {
 	GetLambdaFunctions(ctx aws.Context) ([]api.LambdaFunction, error)
+	GetTagsForFunction(ctx aws.Context, arn string) (map[string]*string, error)
 }
 
 func NewLambdaService(region string) (LambdaService, error) {
@@ -40,4 +41,13 @@ func (s *lambdaServiceImpl) GetLambdaFunctions(ctx aws.Context) ([]api.LambdaFun
 		lambdas = append(lambdas, f)
 	}
 	return lambdas, nil
+}
+
+func (s *lambdaServiceImpl) GetTagsForFunction(ctx aws.Context, arn string) (map[string]*string, error) {
+	input := &lambda.ListTagsInput{Resource: aws.String(arn)}
+	output, err := s.l.ListTagsWithContext(ctx, input)
+	if err != nil {
+		return map[string]*string{}, err
+	}
+	return output.Tags, nil
 }

@@ -8,9 +8,6 @@ Description: >
 Globals:
   Function:
     Timeout: 5
-    Tags:
-      Environment: !Ref Environment
-      Service: 'lambda-stats'
 
 Parameters:
   Environment:
@@ -49,6 +46,9 @@ Resources:
       Environment: 
         Variables:
           ENVIRONMENT: !Ref Environment
+      Tags:
+        Environment: !Ref Environment
+        Service: 'search-functions'
 
   SearchFunctionsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -60,7 +60,7 @@ Resources:
         - Key: 'Environment'
           Value: !Ref Environment
         - Key: 'Service'
-          Value: 'lambda-stats'
+          Value: 'search-functions'
 
   AccessLoggedApi:
     Type: AWS::Serverless::Api
@@ -83,7 +83,7 @@ Resources:
           ThrottlingRateLimit: 10
       Tags:
         Environment: !Ref Environment
-        Service: 'lambda-stats'
+        Service: 'lambda-stats-api'
 
   AccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -94,7 +94,7 @@ Resources:
         - Key: 'Environment'
           Value: !Ref Environment
         - Key: 'Service'
-          Value: 'lambda-stats'
+          Value: 'lambda-stats-api'
 
   ListFunctionsFunction:
     Type: AWS::Serverless::Function 
@@ -123,14 +123,22 @@ Resources:
       Environment: 
         Variables:
           ENVIRONMENT: !Ref Environment
+      Tags:
+        Environment: !Ref Environment
+        Service: 'list-functions'
 
   ListFunctionsLogGroup:
-        Type: AWS::Logs::LogGroup
-        DependsOn: [ ListFunctionsFunction ]
-        Properties:
-              RetentionInDays: 3
-              LogGroupName: !Join ['', ['/aws/lambda/', !Ref ListFunctionsFunction]]
-
+    Type: AWS::Logs::LogGroup
+    DependsOn: [ ListFunctionsFunction ]
+    Properties:
+      RetentionInDays: 3
+      LogGroupName: !Join ['', ['/aws/lambda/', !Ref ListFunctionsFunction]]
+      Tags:
+        - Key: 'Environment'
+          Value: !Ref Environment
+        - Key: 'Service'
+          Value: 'search-functions'
+          
 Outputs:
   SearchFunctionsFunction:
     Description: "Lambda Function ARN"

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
 	"go.uber.org/zap"
 	"lambda-stats/api"
 	"lambda-stats/config"
@@ -45,13 +46,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return events.APIGatewayProxyResponse{}, err
 	}
 
-	stats := []api.LambdaFunction{}
-	for _, v := range lf {
-		if v.Runtime == runtime {
-			stats = append(stats, v)
-		}
+	stats := filterFunctionsByRuntime(lf, runtime)
+	statsWithTags, err := filterFunctionsByTags(ctx, stats, s)
+	if err != nil {
+		zap.S().Error("Error while retrieving tags of lambda functions", zap.Error(err))
+		return events.APIGatewayProxyResponse{}, err
 	}
-	payload, err := json.Marshal(stats)
+	payload, err := json.Marshal(statsWithTags)
 
 	if err != nil {
 		zap.S().Error("Error while serializing to json", zap.Error(err))
@@ -62,6 +63,52 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		Body:       string(payload),
 		StatusCode: 200,
 	}, nil
+}
+
+func filterFunctionsByRuntime(lf []api.LambdaFunction, runtime string) []api.LambdaFunction {
+	stats := []api.LambdaFunction{}
+	for _, v := range lf {
+		if v.Runtime == runtime {
+			stats = append(stats, v)
+		}
+	}
+	return stats
+}
+
+func filterFunctionsByTags(ctx aws.Context, lambdas []api.LambdaFunction, s services.LambdaService) ([]api.LambdaFunction, error) {
+	errChan := make(chan error)
+	defer close(errChan)
+
+	statChan := make(chan api.LambdaFunction)
+	defer close(statChan)
+
+	stats := []api.LambdaFunction{}
+	var errOut error
+
+	for _, l := range lambdas {
+		go func(ctx aws.Context, lf api.LambdaFunction) {
+			tags, err := s.GetTagsForFunction(ctx, lf.FunctionArn)
+			errChan <- err
+			statChan <- api.LambdaFunction{
+				FunctionName: lf.FunctionName,
+				FunctionArn:  lf.FunctionArn,
+				Description:  lf.Description,
+				Runtime:      lf.Runtime,
+				Tags:         tags,
+			}
+		}(ctx, l)
+	}
+
+	for range lambdas {
+		if err := <-errChan; err != nil {
+			errOut = err
+		}
+	}
+	for range lambdas {
+		lf := <-statChan
+		stats = append(stats, lf)
+	}
+	return stats, errOut
 }
 
 func main() {
