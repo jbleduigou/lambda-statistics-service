@@ -19,13 +19,13 @@ Parameters:
     Default: dev
 
 Resources:
-  LambdaStatsFunction:
+  SearchFunctionsFunction:
     Type: AWS::Serverless::Function 
     Properties:
-      CodeUri: lambda-stats/
-      Handler: lambda-stats
+      CodeUri: search-functions/
+      Handler: search-functions
       Runtime: go1.x
-      FunctionName: !Sub '${Environment}-lambda-stats-function'
+      FunctionName: !Sub '${Environment}-search-lambda-function'
       Architectures:
         - x86_64
       Events:
@@ -34,7 +34,7 @@ Resources:
           Properties:
             RestApiId:
               Ref: AccessLoggedApi
-            Path: /lambdas
+            Path: /search
             Method: GET
             RequestParameters:
               - method.request.querystring.region:
@@ -50,12 +50,12 @@ Resources:
         Variables:
           ENVIRONMENT: !Ref Environment
 
-  LambdaLogGroup:
+  SearchFunctionsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
-    DependsOn: [ LambdaStatsFunction ]
+    DependsOn: [ SearchFunctionsFunction ]
     Properties:
       RetentionInDays: 3
-      LogGroupName: !Join ['', ['/aws/lambda/', !Ref LambdaStatsFunction]]
+      LogGroupName: !Join ['', ['/aws/lambda/', !Ref SearchFunctionsFunction]]
       Tags:
         - Key: 'Environment'
           Value: !Ref Environment
