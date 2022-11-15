@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/aws/aws-sdk-go/aws"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -18,32 +19,17 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	zap.S().Debug("Received request")
 
 	regions, err := getRequestedRegions(request)
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusUnprocessableEntity,
+			Body:       err.Error(),
+		}, nil
+	}
 
-	stats := []string{}
-
-	for _, region := range regions {
-		if err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: http.StatusUnprocessableEntity,
-				Body:       err.Error(),
-			}, nil
-		}
-
-		s, err := NewLambdaService(region)
-
-		if err != nil {
-			zap.S().Error("Error creating lambda service", zap.Error(err))
-			return events.APIGatewayProxyResponse{}, err
-		}
-
-		lf, err := s.GetLambdaFunctions(ctx)
-
-		if err != nil {
-			zap.S().Errorw("Error while getting lambda statistics", "error", zap.Error(err), "region", region)
-			return events.APIGatewayProxyResponse{}, err
-		}
-
-		stats = append(stats, lf...)
+	stats, err := retrieveStatistics(ctx, regions)
+	if err != nil {
+		zap.S().Error("Error while retrieving statistics", zap.Error(err))
+		return events.APIGatewayProxyResponse{}, err
 	}
 
 	payload, err := json.Marshal(stats)
@@ -61,6 +47,46 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 func main() {
 	lambda.Start(handler)
+}
+
+func retrieveStatistics(ctx context.Context, regions []string) ([]string, error) {
+	errChan := make(chan error)
+	defer close(errChan)
+
+	statChan := make(chan []string)
+	defer close(statChan)
+
+	stats := []string{}
+	var errOut error
+
+	for _, region := range regions {
+		go func(ctx aws.Context, region string) {
+
+			s, err := NewLambdaService(region)
+
+			if err != nil {
+				errChan <- err
+				statChan <- []string{}
+				return
+			}
+
+			lf, err := s.GetLambdaFunctions(ctx)
+			errChan <- err
+			statChan <- lf
+
+		}(ctx, region)
+	}
+
+	for range regions {
+		if err := <-errChan; err != nil {
+			errOut = err
+		}
+	}
+	for range regions {
+		lf := <-statChan
+		stats = append(stats, lf...)
+	}
+	return stats, errOut
 }
 
 func initLogger(ctx context.Context) {
