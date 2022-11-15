@@ -17,27 +17,33 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	initLogger(ctx)
 	zap.S().Debug("Received request")
 
-	region, err := getRequestedRegion(request)
+	regions, err := getRequestedRegions(request)
 
-	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusUnprocessableEntity,
-			Body:       err.Error(),
-		}, nil
-	}
+	stats := []string{}
 
-	s, err := NewLambdaService(region)
+	for _, region := range regions {
+		if err != nil {
+			return events.APIGatewayProxyResponse{
+				StatusCode: http.StatusUnprocessableEntity,
+				Body:       err.Error(),
+			}, nil
+		}
 
-	if err != nil {
-		zap.S().Error("Error creating lambda service", zap.Error(err))
-		return events.APIGatewayProxyResponse{}, err
-	}
+		s, err := NewLambdaService(region)
 
-	stats, err := s.GetLambdaFunctions(ctx)
+		if err != nil {
+			zap.S().Error("Error creating lambda service", zap.Error(err))
+			return events.APIGatewayProxyResponse{}, err
+		}
 
-	if err != nil {
-		zap.S().Error("Error while getting lambda statistics", zap.Error(err))
-		return events.APIGatewayProxyResponse{}, err
+		lf, err := s.GetLambdaFunctions(ctx)
+
+		if err != nil {
+			zap.S().Errorw("Error while getting lambda statistics", "error", zap.Error(err), "region", region)
+			return events.APIGatewayProxyResponse{}, err
+		}
+
+		stats = append(stats, lf...)
 	}
 
 	payload, err := json.Marshal(stats)
@@ -102,15 +108,15 @@ func getLogLevel() zapcore.Level {
 	return zap.WarnLevel
 }
 
-func getRequestedRegion(request events.APIGatewayProxyRequest) (string, error) {
+func getRequestedRegions(request events.APIGatewayProxyRequest) ([]string, error) {
 	region, found := request.QueryStringParameters["region"]
 	if !found {
-		return "us-east-1", nil
+		return regions, nil
 	}
 	for _, v := range regions {
 		if region == v {
-			return region, nil
+			return []string{region}, nil
 		}
 	}
-	return "", ErrInvalidRegion
+	return []string{}, ErrInvalidRegion
 }
