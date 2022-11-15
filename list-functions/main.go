@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"lambda-stats/config"
-	"lambda-stats/errors"
 	"lambda-stats/log"
 	"lambda-stats/services"
-	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -19,15 +17,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	log.InitLogger(ctx)
 	zap.S().Debug("Received request")
 
-	regions, err := getRequestedRegions(request)
-	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusUnprocessableEntity,
-			Body:       err.Error(),
-		}, nil
-	}
-
-	stats, err := retrieveStatistics(ctx, regions)
+	stats, err := retrieveStatistics(ctx, config.SupportedRegions)
 	if err != nil {
 		zap.S().Error("Error while retrieving statistics", zap.Error(err))
 		return events.APIGatewayProxyResponse{}, err
@@ -88,17 +78,4 @@ func retrieveStatistics(ctx context.Context, regions []string) ([]string, error)
 		stats = append(stats, lf...)
 	}
 	return stats, errOut
-}
-
-func getRequestedRegions(request events.APIGatewayProxyRequest) ([]string, error) {
-	region, found := request.QueryStringParameters["region"]
-	if !found {
-		return config.SupportedRegions, nil
-	}
-	for _, v := range config.SupportedRegions {
-		if region == v {
-			return []string{region}, nil
-		}
-	}
-	return []string{}, errors.ErrInvalidRegion
 }

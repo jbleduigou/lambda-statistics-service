@@ -18,15 +18,12 @@ jobs:
 
     - name: Get dependencies
       run: |
-        cd lambda-stats
         go get -v -t -d ./...
 
     - name: Compile Go
       run: |
-        cd lambda-stats
-        go build
+        go build ./...
 
     - name: Run unit tests
       run: |
-        cd lambda-stats
         go test ./... -race 

@@ -96,6 +96,41 @@ Resources:
         - Key: 'Service'
           Value: 'lambda-stats'
 
+  ListFunctionsFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: list-functions/
+      Handler: list-functions
+      Runtime: go1.x
+      FunctionName: !Sub '${Environment}-list-lambda-function'
+      Architectures:
+        - x86_64
+      Events:
+        CatchAll:
+          Type: Api 
+          Properties:
+            RestApiId:
+              Ref: AccessLoggedApi
+            Path: /list
+            Method: GET
+      Policies:
+        - Statement:
+          - Sid: ListLambdaFunctions
+            Effect: Allow
+            Action:
+            - lambda:List*
+            Resource: '*'
+      Environment: 
+        Variables:
+          ENVIRONMENT: !Ref Environment
+
+  ListFunctionsLogGroup:
+        Type: AWS::Logs::LogGroup
+        DependsOn: [ ListFunctionsFunction ]
+        Properties:
+              RetentionInDays: 3
+              LogGroupName: !Join ['', ['/aws/lambda/', !Ref ListFunctionsFunction]]
+
 Outputs:
   LambdaStatsFunction:
     Description: "Lambda Function ARN"

@@ -1,7 +1,7 @@
-package main
+package config
 
 var (
-	regions = []string{
+	SupportedRegions = []string{
 		"us-east-2",
 		"us-east-1",
 		"us-west-1",
