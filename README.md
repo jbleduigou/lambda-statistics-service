@@ -134,6 +134,7 @@ The output will be something similar to:
 
 While this service is fully functionning, there are a couple of things which could be improved:
 * 🤝 Having an OpenAPI definition would be nice
+* 📑 Support pagination
 * ⚡️ Review performances of the filtering (successive loops)
 * ♻️ Use enums for the constants in the config package
 * ✅ Add more unit tests
