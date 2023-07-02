@@ -45,5 +45,6 @@ var (
 		"dotnet5.0",
 		"go1.x",
 		"ruby2.7",
+		"provided.al2",
 	}
 )
