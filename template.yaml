@@ -18,13 +18,15 @@ Parameters:
 Resources:
   SearchFunctionsFunction:
     Type: AWS::Serverless::Function 
+    Metadata:
+      BuildMethod: makefile
     Properties:
-      CodeUri: search-functions/
-      Handler: search-functions
-      Runtime: go1.x
+      CodeUri: ./
+      Handler: bootstrap
+      Runtime: provided.al2
       FunctionName: !Sub '${Environment}-search-lambda-function'
       Architectures:
-        - x86_64
+        - arm64
       Events:
         CatchAll:
           Type: Api 
@@ -98,13 +100,15 @@ Resources:
 
   ListFunctionsFunction:
     Type: AWS::Serverless::Function 
+    Metadata:
+      BuildMethod: makefile
     Properties:
-      CodeUri: list-functions/
-      Handler: list-functions
-      Runtime: go1.x
+      CodeUri: ./
+      Handler: bootstrap
+      Runtime: provided.al2
       FunctionName: !Sub '${Environment}-list-lambda-function'
       Architectures:
-        - x86_64
+        - arm64
       Events:
         CatchAll:
           Type: Api 
